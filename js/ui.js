@@ -91,3 +91,4 @@ function updateMenuHighlight() {
     }
   });
 }
+
