@@ -26,7 +26,7 @@ function buildSaveData() {
 }
 
 function applySaveData(data) {
-  // (full body as you have it now – unchanged)
+  // (full body as you have it now â€“ unchanged)
 }
 
 function saveGameToFile() {
