@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Mini Undertale-style Turn Battle Demo</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: #000;
+      color: #fff;
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    #game {
+      border: 4px solid #fff;
+      padding: 8px;
+      background: #000;
+    }
+
+    #battleCanvas {
+      display: block;
+      background: #000;
+    }
+
+    .ui {
+      margin-top: 8px;
+    }
+
+    #message {
+      min-height: 32px;
+      padding: 4px 0;
+      white-space: pre-wrap;
+    }
+
+    .menu {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .menu button {
+      background: #000;
+      color: #fff;
+      border: 2px solid #fff;
+      padding: 4px 12px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .menu button:hover {
+      background: #fff;
+      color: #000;
+    }
+
+    .menu button.selected {
+      background: #fff;
+      color: #000;
+    }
+
+    #saveLoadBar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 4px;
+      font-size: 12px;
+    }
+
+    #saveLoadBar button {
+      background: #000;
+      color: #fff;
+      border: 2px solid #fff;
+      padding: 2px 8px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    #saveLoadBar input[type="file"] {
+      font-size: 11px;
+      max-width: 220px;
+    }
+  </style>
+</head>
+<body>
+  <div id="game">
+    <div id="saveLoadBar">
+      <button id="saveBtn">Save</button>
+      <span>Load:</span>
+      <input id="loadInput" type="file" accept=".mut,application/json" />
+    </div>
+    <canvas id="battleCanvas" width="600" height="400"></canvas>
+    <div class="ui">
+      <div id="message"></div>
+      <div class="menu">
+        <button data-action="attack">Fight</button>
+        <button data-action="talk">Talk</button>
+        <button data-action="item">Item</button>
+        <button data-action="spare">Spare</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS modules (order matters!) -->
+  <script src="js/gameData.js"></script>
+  <script src="js/core.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/world.js"></script>
+  <script src="js/battle.js"></script>
+  <script src="js/save.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
