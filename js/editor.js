@@ -122,7 +122,7 @@ function refreshRoomList() {
   Object.keys(rooms).forEach((id) => {
     const room = rooms[id];
     const li = document.createElement("li");
-    li.textContent = `${id} – ${room.name || ""}`;
+    li.textContent = `${id} â€“ ${room.name || ""}`;
     if (id === selectedRoomId) li.classList.add("selected");
     li.addEventListener("click", () => selectRoom(id));
     roomListEl.appendChild(li);
@@ -134,7 +134,7 @@ function refreshItemList() {
   Object.keys(items).forEach((id) => {
     const it = items[id];
     const li = document.createElement("li");
-    li.textContent = `${id} – ${it.name || ""}`;
+    li.textContent = `${id} â€“ ${it.name || ""}`;
     if (id === selectedItemId) li.classList.add("selected");
     li.addEventListener("click", () => selectItem(id));
     itemListEl.appendChild(li);
@@ -258,7 +258,7 @@ function refreshDecorSelect() {
     const def = decorDefs[id];
     const opt = document.createElement("option");
     opt.value = id;
-    opt.textContent = def?.name ? `${id} – ${def.name}` : id;
+    opt.textContent = def?.name ? `${id} â€“ ${def.name}` : id;
     decorSelect.appendChild(opt);
   });
   if (ids.length > 0 && !mapState.currentDecorId) {
