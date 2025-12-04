@@ -1,5 +1,6 @@
-﻿// world.js
+// world.js
 
+const gameData   = window.gameData;
 const itemDefs   = window.gameData.items;
 const rooms      = window.gameData.rooms;
 const tilesets   = window.gameData.tilesets || {};
@@ -12,12 +13,15 @@ function initTilesets() {
   Object.keys(tilesets).forEach(id => {
     const ts = tilesets[id];
     if (!ts || !ts.image) return;
+    if (tilesetImages[id]) return;
+
     const img = new Image();
     img.src = ts.image;
     tilesetImages[id] = img;
     ts.imageObj = img;
   });
 }
+
 
 // (then the rest of world.js as you already have it: questState, inventory, hero, etc.)
 
@@ -327,22 +331,19 @@ function drawTileLayer(ctx, room) {
 
   const ts = tilesets[layer.tilesetId];
   if (!ts) return;
-  const img = ts.imageObj;
-  if (!img) return;
 
+  const img = ts.imageObj;
   const tw = layer.tileWidth  || ts.tileWidth;
   const th = layer.tileHeight || ts.tileHeight;
   const gridW = layer.gridWidth;
   const gridH = layer.gridHeight;
-  const cols = ts.columns || Math.floor(img.width / tw);
+
+  const cols = ts.columns || Math.floor((img?.width || (gridW * tw)) / tw);
 
   for (let ty = 0; ty < gridH; ty++) {
     for (let tx = 0; tx < gridW; tx++) {
       const tileIndex = layer.tiles[ty * gridW + tx];
       if (tileIndex == null || tileIndex < 0) continue;
-
-      const sx = (tileIndex % cols) * tw;
-      const sy = Math.floor(tileIndex / cols) * th;
 
       const worldX = tx * tw;
       const worldY = ty * th;
@@ -350,10 +351,19 @@ function drawTileLayer(ctx, room) {
       const screenX = Math.floor(worldX - camera.x);
       const screenY = Math.floor(worldY - camera.y);
 
-      ctx.drawImage(img, sx, sy, tw, th, screenX, screenY, tw, th);
+      if (img && img.complete && img.width > 0 && img.height > 0) {
+        const sx = (tileIndex % cols) * tw;
+        const sy = Math.floor(tileIndex / cols) * th;
+        ctx.drawImage(img, sx, sy, tw, th, screenX, screenY, tw, th);
+      } else {
+        // placeholder if image missing
+        ctx.fillStyle = "#333";
+        ctx.fillRect(screenX, screenY, tw, th);
+      }
     }
   }
 }
+
 
 function drawDecor(ctx, room) {
   if (!room.decor) return;
@@ -361,10 +371,11 @@ function drawDecor(ctx, room) {
   room.decor.forEach(inst => {
     const def = decorDefs[inst.decorId];
     if (!def) return;
+
     const ts = tilesets[def.tilesetId];
     if (!ts) return;
     const img = ts.imageObj;
-    if (!img) return;
+    if (!img || !img.complete) return;
 
     const baseTileW = ts.tileWidth;
     const baseTileH = ts.tileHeight;
@@ -387,6 +398,7 @@ function drawDecor(ctx, room) {
     ctx.drawImage(img, sx, sy, drawW, drawH, screenX, screenY, drawW, drawH);
   });
 }
+
 
 
 // -------------------------
@@ -1331,12 +1343,14 @@ function drawInventoryOverlay() {
 }
 
 function drawOverworld() {
+  // Clear screen
   ctx.fillStyle = "#000000";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   const room = getCurrentRoom();
-
   const gridSize = 40;
+
+  // Optional background grid (kept as-is)
   ctx.strokeStyle = "#333333";
   ctx.lineWidth = 1;
 
@@ -1357,13 +1371,10 @@ function drawOverworld() {
   }
 
   if (room) {
-    if (room.name) {
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "14px sans-serif";
-      ctx.textBaseline = "top";
-      ctx.fillText(room.name, 16, 16);
-    }
+    // 1) Tiles under everything
+    drawTileLayer(ctx, room);
 
+    // 2) Walls / collision geometry
     if (room.walls) {
       ctx.fillStyle = "#111111";
       for (const w of room.walls) {
@@ -1376,6 +1387,7 @@ function drawOverworld() {
       }
     }
 
+    // 3) Doors
     if (room.doors) {
       ctx.fillStyle = "#222222";
       for (const d of room.doors) {
@@ -1388,9 +1400,14 @@ function drawOverworld() {
       }
     }
 
+    // 4) Decorative props (trees, tables, drinks…) from decorDefs
+    drawDecor(ctx, room);
+
+    // 5) NPCs
     if (room.npcs) {
       for (const npc of room.npcs) {
         if (npc.active === false) continue;
+
         if (
           npc.id === "lost_charm" ||
           npc.id === "river_herb" ||
@@ -1400,12 +1417,14 @@ function drawOverworld() {
         } else {
           ctx.fillStyle = "#ffff00";
         }
+
         ctx.fillRect(
           npc.x - camera.x,
           npc.y - camera.y,
           npc.width,
           npc.height
         );
+
         if (npc.label) {
           ctx.fillStyle = "#ffffff";
           ctx.font = "12px sans-serif";
@@ -1420,12 +1439,22 @@ function drawOverworld() {
     }
   }
 
+  // 6) Player (heart) on top of world
   drawHeartSprite(
     hero.x - camera.x,
     hero.y - camera.y,
     hero.size
   );
 
+  // 7) Area name NOW in foreground (after walls/doors/NPCs)
+  if (room && room.name) {
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "14px sans-serif";
+    ctx.textBaseline = "top";
+    ctx.fillText(room.name, 16, 16);
+  }
+
+  // 8) Interaction prompt
   const nearNpc = getNearestNpc(50);
   if (nearNpc && !cutscene.active) {
     ctx.fillStyle = "#ffffff";
@@ -1438,33 +1467,19 @@ function drawOverworld() {
     );
   }
 
+  // 9) Room transition fade
   if (transition.active) {
     const a = Math.max(0, Math.min(1, transition.alpha));
     ctx.fillStyle = `rgba(0,0,0,${a})`;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
 
+  // 10) Inventory overlay
   if (inventoryState.open) {
     drawInventoryOverlay();
   }
 
+  // 11) Stats panel on top-right
   drawStatsPanel();
-  function drawOverworld(ctx) {
-  const room = rooms[currentRoomId];
-
-  // 1) Background tiles
-  drawTileLayer(ctx, room);
-
-  // 2) Walls / collision geometry (same as you had)
-  drawWalls(ctx, room);   // whatever your wall-drawing function is called
-
-  // 3) Decorative props
-  drawDecor(ctx, room);
-
-  // 4) NPCs, player, UI, etc. (your existing stuff)
-  drawNPCs(ctx, room);
-  drawPlayer(ctx);
-  drawOverworldUI(ctx);
 }
 
-}
